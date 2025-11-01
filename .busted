@@ -1,0 +1,9 @@
+return {
+  _all = {
+    verbose = true,
+    lua = 'lua',
+  },
+  default = {
+    ROOT = {'./lua/?.lua', './lua/?/init.lua'},
+  },
+}
