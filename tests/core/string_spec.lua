@@ -8,6 +8,12 @@ describe("core/string test", function()
     end)
 
     describe("extractHeadings", function()
+        before_each(function()
+            -- Setup vim global mock
+            _G.vim = _G.vim or {}
+            _G.vim.api = _G.vim.api or {}
+        end)
+
         it("should extract all markdown headings from buffer", function()
             -- Arrange
             local buffer_lines = {
@@ -17,7 +23,6 @@ describe("core/string test", function()
                 "More text",
                 "### Heading 3",
             }
-            vim.api = vim.api or {}
             vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {
@@ -40,7 +45,6 @@ describe("core/string test", function()
                 "No headings here",
                 "Still no headings",
             }
-            vim.api = vim.api or {}
             vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {}
@@ -62,7 +66,6 @@ describe("core/string test", function()
                 "##### H5",
                 "###### H6",
             }
-            vim.api = vim.api or {}
             vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {
@@ -89,7 +92,6 @@ describe("core/string test", function()
                 "##Also invalid",
                 "## Valid heading 2",
             }
-            vim.api = vim.api or {}
             vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {
@@ -107,7 +109,6 @@ describe("core/string test", function()
         it("should handle empty buffer", function()
             -- Arrange
             local buffer_lines = {}
-            vim.api = vim.api or {}
             vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {}
