@@ -165,12 +165,12 @@ graph LR
     D -.Passed between.-> E
     E -.Passed between.-> F
 
-    style A fill:#FFE4B5
-    style B fill:#B0E0E6
-    style C fill:#B0E0E6
-    style D fill:#DDA0DD
-    style E fill:#DDA0DD
-    style F fill:#DDA0DD
+    style A fill:#4A5568,stroke:#A0AEC0,color:#E2E8F0
+    style B fill:#2C5282,stroke:#4299E1,color:#E2E8F0
+    style C fill:#2C5282,stroke:#4299E1,color:#E2E8F0
+    style D fill:#553C9A,stroke:#9F7AEA,color:#E2E8F0
+    style E fill:#553C9A,stroke:#9F7AEA,color:#E2E8F0
+    style F fill:#553C9A,stroke:#9F7AEA,color:#E2E8F0
 ```
 
 ## Key Concepts
