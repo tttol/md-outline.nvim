@@ -2,51 +2,115 @@ local M = {}
 
 local string = require('core.string')
 
+local ns_id = vim.api.nvim_create_namespace('md_outline')
+
+local function find_current_heading(cursor_line, positions)
+    local current_heading_idx = nil
+    for i, pos in ipairs(positions) do
+        if pos.line <= cursor_line then
+            current_heading_idx = i
+        else
+            break
+        end
+    end
+    return current_heading_idx
+end
+
+local function update_highlight(outline_buf_local, source_buf_local)
+    if not outline_buf_local or not vim.api.nvim_buf_is_valid(outline_buf_local) then
+        return
+    end
+
+    if not source_buf_local or not vim.api.nvim_buf_is_valid(source_buf_local) then
+        return
+    end
+
+    local heading_positions = vim.b[source_buf_local].md_outline_positions or {}
+    local prev_highlight = vim.b[outline_buf_local].md_outline_highlight_line
+
+    if prev_highlight then
+        vim.api.nvim_buf_clear_namespace(outline_buf_local, ns_id, prev_highlight, prev_highlight + 1)
+    end
+
+    local cursor_pos = vim.api.nvim_win_get_cursor(0)
+    local cursor_line = cursor_pos[1]
+
+    local heading_idx = find_current_heading(cursor_line, heading_positions)
+    if heading_idx then
+        local highlight_line = heading_idx - 1
+        vim.highlight.range(outline_buf_local, ns_id, 'CursorLine', {highlight_line, 0}, {highlight_line, -1})
+        vim.b[outline_buf_local].md_outline_highlight_line = highlight_line
+    end
+end
+
 function M.close(outline_win, outline_buf)
     if outline_win and vim.api.nvim_win_is_valid(outline_win) then
         vim.api.nvim_win_close(outline_win, true)
     end
-    outline_win = nil
-    outline_buf = nil
 
-    return outline_win, outline_buf
+    vim.api.nvim_clear_autocmds({
+        group = 'MdOutlineHighlight',
+    })
+
+    return nil, nil
 end
 
 function M.show(outline_win, outline_buf)
     local current_win = vim.api.nvim_get_current_win()
+    local source_buf_local = vim.api.nvim_get_current_buf()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+    local heading_positions = {}
+    for i, line in ipairs(lines) do
+        if line:match("^#+%s+") then
+            table.insert(heading_positions, {line = i, text = line})
+        end
+    end
+
+    vim.b[source_buf_local].md_outline_positions = heading_positions
+
     local headings = string.extractHeadings(lines)
     local outlines = string.createOutline(headings)
 
-    outline_buf = vim.api.nvim_create_buf(false, true)
+    local new_outline_buf = vim.api.nvim_create_buf(false, true)
 
     local footer = "press q to close this window..."
     table.insert(outlines, "")
     table.insert(outlines, footer)
 
-    vim.api.nvim_buf_set_lines(outline_buf, 0, -1, false, outlines)
+    vim.api.nvim_buf_set_lines(new_outline_buf, 0, -1, false, outlines)
 
-    vim.api.nvim_set_option_value('modifiable', false, {buf = outline_buf})
-    vim.api.nvim_set_option_value('buftype', 'nofile', {buf = outline_buf})
+    vim.api.nvim_set_option_value('modifiable', false, {buf = new_outline_buf})
+    vim.api.nvim_set_option_value('buftype', 'nofile', {buf = new_outline_buf})
 
     vim.cmd('vsplit')
     vim.cmd('wincmd L')
-    outline_win = vim.api.nvim_get_current_win()
+    local new_outline_win = vim.api.nvim_get_current_win()
 
-    vim.api.nvim_win_set_buf(outline_win, outline_buf)
-    vim.api.nvim_win_set_width(outline_win, 40)
+    vim.api.nvim_win_set_buf(new_outline_win, new_outline_buf)
+    vim.api.nvim_win_set_width(new_outline_win, 40)
 
-    local ns_id = vim.api.nvim_create_namespace('md_outline')
-    vim.highlight.range(outline_buf, ns_id, 'Comment', {#outlines - 1, 0}, {#outlines - 1, -1})
+    vim.highlight.range(new_outline_buf, ns_id, 'Comment', {#outlines - 1, 0}, {#outlines - 1, -1})
 
-    vim.api.nvim_buf_set_keymap(outline_buf, 'n', 'q', ':lua require("md-outline").close()<CR>', {
+    vim.api.nvim_buf_set_keymap(new_outline_buf, 'n', 'q', ':lua require("md-outline").close()<CR>', {
         noremap = true,
         silent = true
     })
 
     vim.api.nvim_set_current_win(current_win)
 
-    return outline_win, outline_buf
+    vim.api.nvim_create_augroup('MdOutlineHighlight', {clear = true})
+    vim.api.nvim_create_autocmd({'CursorMoved', 'CursorMovedI'}, {
+        group = 'MdOutlineHighlight',
+        buffer = source_buf_local,
+        callback = function()
+            update_highlight(new_outline_buf, source_buf_local)
+        end,
+    })
+
+    update_highlight(new_outline_buf, source_buf_local)
+
+    return new_outline_win, new_outline_buf
 end
 
 return M

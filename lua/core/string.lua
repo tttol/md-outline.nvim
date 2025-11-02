@@ -23,7 +23,7 @@ function M.createOutline(headings)
                 break
             end
         end
-        local indent = string.rep("    ", sharp_count - 1)
+        local indent = string.rep("  ", sharp_count - 1)
         local text = h:gsub("^#+%s*", "")
         table.insert(outlines, indent .. text)
     end

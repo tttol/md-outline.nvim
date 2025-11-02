@@ -6,6 +6,7 @@ package.path = package.path .. ';' .. lua_path
 
 package.loaded['md-outline'] = nil
 package.loaded['core.window'] = nil
+package.loaded['core.string'] = nil
 
 local mdOutline = require('md-outline')
 mdOutline.main()

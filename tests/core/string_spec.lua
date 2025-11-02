@@ -113,8 +113,8 @@ describe("core/string test", function()
             }
             local expected = {
                 "H1",
-                "    H2",
-                "        H3",
+                "  H2",
+                "    H3",
             }
 
             -- Act
