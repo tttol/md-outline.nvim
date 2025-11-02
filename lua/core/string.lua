@@ -1,7 +1,6 @@
 local M = {}
 
-function M.extractHeadings()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+function M.extractHeadings(lines)
     local headings = {}
 
     for _, line in ipairs(lines) do

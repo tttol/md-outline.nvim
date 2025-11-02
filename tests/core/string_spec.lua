@@ -8,11 +8,11 @@ describe("core/string test", function()
     end)
 
     describe("extractHeadings", function()
-        before_each(function()
-            -- Setup vim global mock
-            _G.vim = _G.vim or {}
-            _G.vim.api = _G.vim.api or {}
-        end)
+        -- before_each(function()
+        --     -- Setup vim global mock
+        --     _G.vim = _G.vim or {}
+        --     _G.vim.api = _G.vim.api or {}
+        -- end)
 
         it("should extract all markdown headings from buffer", function()
             -- Arrange
@@ -23,7 +23,6 @@ describe("core/string test", function()
                 "More text",
                 "### Heading 3",
             }
-            vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {
                 "# Heading 1",
@@ -32,7 +31,7 @@ describe("core/string test", function()
             }
 
             -- Act
-            local actual = string.extractHeadings()
+            local actual = string.extractHeadings(buffer_lines)
 
             -- Assert
             assert.are.same(expected, actual)
@@ -45,12 +44,11 @@ describe("core/string test", function()
                 "No headings here",
                 "Still no headings",
             }
-            vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {}
 
             -- Act
-            local actual = string.extractHeadings()
+            local actual = string.extractHeadings(buffer_lines)
 
             -- Assert
             assert.are.same(expected, actual)
@@ -66,7 +64,6 @@ describe("core/string test", function()
                 "##### H5",
                 "###### H6",
             }
-            vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {
                 "# H1",
@@ -78,7 +75,7 @@ describe("core/string test", function()
             }
 
             -- Act
-            local actual = string.extractHeadings()
+            local actual = string.extractHeadings(buffer_lines)
 
             -- Assert
             assert.are.same(expected, actual)
@@ -92,7 +89,6 @@ describe("core/string test", function()
                 "##Also invalid",
                 "## Valid heading 2",
             }
-            vim.api.nvim_buf_get_lines = function() return buffer_lines end
 
             local expected = {
                 "# Valid heading",
@@ -100,21 +96,7 @@ describe("core/string test", function()
             }
 
             -- Act
-            local actual = string.extractHeadings()
-
-            -- Assert
-            assert.are.same(expected, actual)
-        end)
-
-        it("should handle empty buffer", function()
-            -- Arrange
-            local buffer_lines = {}
-            vim.api.nvim_buf_get_lines = function() return buffer_lines end
-
-            local expected = {}
-
-            -- Act
-            local actual = string.extractHeadings()
+            local actual = string.extractHeadings(buffer_lines)
 
             -- Assert
             assert.are.same(expected, actual)

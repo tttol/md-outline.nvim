@@ -14,7 +14,8 @@ end
 
 function M.show(outline_win, outline_buf)
     local current_win = vim.api.nvim_get_current_win()
-    local headings = string.extractHeadings()
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local headings = string.extractHeadings(lines)
     local outlines = string.createOutline(headings)
 
     outline_buf = vim.api.nvim_create_buf(false, true)
