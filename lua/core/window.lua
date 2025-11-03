@@ -45,7 +45,7 @@ local function update_highlight(outline_buf_local, source_buf_local)
     local heading_idx = find_current_heading(cursor_line, heading_positions)
     if heading_idx then
         local highlight_line = heading_idx - 1
-        vim.highlight.range(outline_buf_local, ns_id, 'CursorLine', {highlight_line, 0}, {highlight_line, -1})
+        vim.highlight.range(outline_buf_local, ns_id, 'Visual', {highlight_line, 0}, {highlight_line, -1})
         vim.b[outline_buf_local].md_outline_highlight_line = highlight_line
     end
 end
