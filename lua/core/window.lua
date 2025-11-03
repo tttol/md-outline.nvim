@@ -65,22 +65,10 @@ function M.close(outline_win)
     return nil
 end
 
--- Show the markdown outline in a split window
--- @return number: Returns outline_win
-function M.show()
-    local current_win = vim.api.nvim_get_current_win()
-    local source_buf_local = vim.api.nvim_get_current_buf()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-
-    local heading_positions = {}
-    for i, line in ipairs(lines) do
-        if line:match("^#+%s+") then
-            table.insert(heading_positions, {line = i, text = line})
-        end
-    end
-
-    vim.b[source_buf_local].md_outline_positions = heading_positions
-
+-- Create and configure the outline window with buffer
+-- @param lines table: Array of lines from the source markdown file
+-- @return number, number: Returns outline_win and outline_buf
+function M.createOutlineBuffer(lines)
     local headings = string.extractHeadings(lines)
     local outlines = string.createOutline(headings)
 
@@ -109,8 +97,28 @@ function M.show()
         silent = true
     })
 
-    vim.api.nvim_set_current_win(current_win)
+    return new_outline_win, new_outline_buf
+end
 
+
+-- Show the markdown outline in a split window
+-- @return number: Returns outline_win
+function M.show()
+    local current_win = vim.api.nvim_get_current_win()
+    local source_buf_local = vim.api.nvim_get_current_buf()
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+    local heading_positions = {}
+    for i, line in ipairs(lines) do
+        if line:match("^#+%s+") then
+            table.insert(heading_positions, {line = i, text = line})
+        end
+    end
+
+    vim.b[source_buf_local].md_outline_positions = heading_positions
+    local new_outline_win, new_outline_buf = M.createOutlineBuffer(lines)
+ 
+    vim.api.nvim_set_current_win(current_win)
     vim.api.nvim_create_augroup('MdOutlineHighlight', {clear = true})
     vim.api.nvim_create_autocmd({'CursorMoved', 'CursorMovedI'}, {
         group = 'MdOutlineHighlight',
