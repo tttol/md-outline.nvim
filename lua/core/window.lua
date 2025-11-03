@@ -4,6 +4,10 @@ local string = require('core.string')
 
 local ns_id = vim.api.nvim_create_namespace('md_outline')
 
+-- Find the index of the heading that contains the cursor position
+-- @param cursor_line number: Current cursor line number
+-- @param positions table: Array of heading positions with line numbers
+-- @return number|nil: Index of the current heading, or nil if not found
 local function find_current_heading(cursor_line, positions)
     local current_heading_idx = nil
     for i, pos in ipairs(positions) do
@@ -16,6 +20,9 @@ local function find_current_heading(cursor_line, positions)
     return current_heading_idx
 end
 
+-- Update the highlight in the outline buffer based on cursor position in source buffer
+-- @param outline_buf_local number: Buffer number of the outline window
+-- @param source_buf_local number: Buffer number of the source markdown file
 local function update_highlight(outline_buf_local, source_buf_local)
     if not outline_buf_local or not vim.api.nvim_buf_is_valid(outline_buf_local) then
         return
@@ -43,7 +50,10 @@ local function update_highlight(outline_buf_local, source_buf_local)
     end
 end
 
-function M.close(outline_win, outline_buf)
+-- Close the outline window and clean up autocmds
+-- @param outline_win number: Window number of the outline window
+-- @return nil, nil: Returns nil for outline_win
+function M.close(outline_win)
     if outline_win and vim.api.nvim_win_is_valid(outline_win) then
         vim.api.nvim_win_close(outline_win, true)
     end
@@ -52,10 +62,12 @@ function M.close(outline_win, outline_buf)
         group = 'MdOutlineHighlight',
     })
 
-    return nil, nil
+    return nil
 end
 
-function M.show(outline_win, outline_buf)
+-- Show the markdown outline in a split window
+-- @return number: Returns outline_win
+function M.show()
     local current_win = vim.api.nvim_get_current_win()
     local source_buf_local = vim.api.nvim_get_current_buf()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
@@ -110,7 +122,7 @@ function M.show(outline_win, outline_buf)
 
     update_highlight(new_outline_buf, source_buf_local)
 
-    return new_outline_win, new_outline_buf
+    return new_outline_win
 end
 
 return M
