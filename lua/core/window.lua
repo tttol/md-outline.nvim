@@ -50,6 +50,23 @@ local function update_highlight(outline_buf_local, source_buf_local)
     end
 end
 
+local function create_buffer_contents(lines, buf)
+     -- enable to modify buffer temporary
+    vim.api.nvim_set_option_value('modifiable', true, {buf = buf})
+
+    local headings = string.extractHeadings(lines)
+    local outlines = string.createOutline(headings)
+    local footer = "press q to close this window..."
+    table.insert(outlines, "")
+    table.insert(outlines, footer)
+
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, outlines)
+    vim.highlight.range(buf, ns_id, 'Comment', {#outlines - 1, 0}, {#outlines - 1, -1})
+
+    vim.api.nvim_set_option_value('modifiable', false, {buf = buf})
+    return buf
+end
+
 -- Close the outline window and clean up autocmds
 -- @param outline_win number: Window number of the outline window
 -- @return nil, nil: Returns nil for outline_win
@@ -59,7 +76,10 @@ function M.close(outline_win)
     end
 
     vim.api.nvim_clear_autocmds({
-        group = 'MdOutlineHighlight',
+        group = 'MdOutlineHighlight'
+    })
+    vim.api.nvim_clear_autocmds({
+        group = 'MdOutlineContents'
     })
 
     return nil
@@ -69,16 +89,8 @@ end
 -- @param lines table: Array of lines from the source markdown file
 -- @return number, number: Returns outline_win and outline_buf
 function M.createOutlineBuffer(lines)
-    local headings = string.extractHeadings(lines)
-    local outlines = string.createOutline(headings)
-
     local new_outline_buf = vim.api.nvim_create_buf(false, true)
-
-    local footer = "press q to close this window..."
-    table.insert(outlines, "")
-    table.insert(outlines, footer)
-
-    vim.api.nvim_buf_set_lines(new_outline_buf, 0, -1, false, outlines)
+    new_outline_buf = create_buffer_contents(lines, new_outline_buf)
 
     vim.api.nvim_set_option_value('modifiable', false, {buf = new_outline_buf})
     vim.api.nvim_set_option_value('buftype', 'nofile', {buf = new_outline_buf})
@@ -90,8 +102,6 @@ function M.createOutlineBuffer(lines)
     vim.api.nvim_win_set_buf(new_outline_win, new_outline_buf)
     vim.api.nvim_win_set_width(new_outline_win, 40)
 
-    vim.highlight.range(new_outline_buf, ns_id, 'Comment', {#outlines - 1, 0}, {#outlines - 1, -1})
-
     vim.api.nvim_buf_set_keymap(new_outline_buf, 'n', 'q', ':lua require("md-outline").close()<CR>', {
         noremap = true,
         silent = true
@@ -99,7 +109,6 @@ function M.createOutlineBuffer(lines)
 
     return new_outline_win, new_outline_buf
 end
-
 
 -- Show the markdown outline in a split window
 -- @return number: Returns outline_win
@@ -117,7 +126,7 @@ function M.show()
 
     vim.b[source_buf_local].md_outline_positions = heading_positions
     local new_outline_win, new_outline_buf = M.createOutlineBuffer(lines)
- 
+
     vim.api.nvim_set_current_win(current_win)
     vim.api.nvim_create_augroup('MdOutlineHighlight', {clear = true})
     vim.api.nvim_create_autocmd({'CursorMoved', 'CursorMovedI'}, {
@@ -126,6 +135,15 @@ function M.show()
         callback = function()
             update_highlight(new_outline_buf, source_buf_local)
         end,
+    })
+
+    vim.api.nvim_create_augroup('MdOutlineContents', {clear = true})
+    vim.api.nvim_create_autocmd('TextChangedI', {
+        group = 'MdOutlineContents',
+        buffer = source_buf_local,
+        callback = function()
+            create_buffer_contents(vim.api.nvim_buf_get_lines(0, 0, -1, false), new_outline_buf)
+        end
     })
 
     update_highlight(new_outline_buf, source_buf_local)
