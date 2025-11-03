@@ -138,7 +138,7 @@ function M.show()
     })
 
     vim.api.nvim_create_augroup('MdOutlineContents', {clear = true})
-    vim.api.nvim_create_autocmd('TextChangedI', {
+    vim.api.nvim_create_autocmd({'TextChanged', 'TextChangedI'}, {
         group = 'MdOutlineContents',
         buffer = source_buf_local,
         callback = function()
