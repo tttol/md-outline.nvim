@@ -100,45 +100,45 @@ flowchart TD
 sequenceDiagram
     participant User
     participant MdoOpen
-    participant Window
-    participant String
-    participant Vim
-    participant Autocmd
+    participant core/window
+    participant core/string
+    participant vim.api
+    participant autocmd
 
     User->>MdoOpen: :MdoOpen
-    MdoOpen->>Window: show()
+    MdoOpen->>core/window: show()
 
-    Window->>Vim: Get current buffer/lines
-    Vim-->>Window: lines
+    core/window->>vim.api: Get current buffer/lines
+    vim.api-->>core/window: lines
 
-    Window->>Window: Collect heading positions
-    Window->>Vim: Save to vim.b[source_buf]
+    core/window->>core/window: Collect heading positions
+    core/window->>vim.api: Save to vim.b[source_buf]
 
-    Window->>String: extractHeadings(lines)
-    String-->>Window: headings
+    core/window->>core/string: extractHeadings(lines)
+    core/string-->>core/window: headings
 
-    Window->>String: createOutline(headings)
-    String-->>Window: outlines
+    core/window->>core/string: createOutline(headings)
+    core/string-->>core/window: outlines
 
-    Window->>Vim: Create buffer and window
-    Window->>Vim: Setup autocmd listeners
-    Window->>Window: update_highlight()
+    core/window->>vim.api: Create buffer and window
+    core/window->>vim.api: Setup autocmd listeners
+    core/window->>core/window: update_highlight()
 
-    Window-->>User: Display outline window
+    core/window-->>User: Display outline window
 
     loop Cursor Movement
-        User->>Vim: Move cursor
-        Vim->>Autocmd: CursorMoved event
-        Autocmd->>Window: update_highlight()
-        Window->>Window: find_current_heading()
-        Window->>Vim: Highlight corresponding line
-        Vim-->>User: Visual feedback
+        User->>vim.api: Move cursor
+        vim.api->>autocmd: CursorMoved event
+        autocmd->>core/window: update_highlight()
+        core/window->>core/window: find_current_heading()
+        core/window->>vim.api: Highlight corresponding line
+        vim.api-->>User: Visual feedback
     end
 
-    User->>Window: Press 'q' or :MdoClose
-    Window->>Vim: Close window
-    Window->>Vim: Clear autocmds
-    Window-->>User: Outline closed
+    User->>core/window: Press 'q' or :MdoClose
+    core/window->>vim.api: Close window
+    core/window->>vim.api: Clear autocmds
+    core/window-->>User: Outline closed
 ```
 
 ## State Management
