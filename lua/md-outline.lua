@@ -22,6 +22,7 @@ end
 
 function M.main()
     M.show()
+    vim.notify('md-outline\'s buffer is opened')
 end
 
 return M
