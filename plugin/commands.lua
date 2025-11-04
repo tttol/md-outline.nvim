@@ -18,7 +18,9 @@ vim.api.nvim_create_autocmd('BufEnter', {
   callback = function()
     local md_outline = require('md-outline')
     if md_outline.config.auto_open then
-      md_outline.show()
+      vim.schedule(function()
+        md_outline.show()
+      end)
     end
   end,
 })
