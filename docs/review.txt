@@ -1,0 +1,100 @@
+⏺ コードレビュー: PR #3 "Tasks for first release"
+
+  概要
+
+  このPRは、マークdownアウトラインプラグインのファーストリリースに向けた重要な改善を含んでいます。主な変更内容:
+  - バッファ/ウィンドウ管理の堅牢化
+  - 重複バッファ防止機能の追加
+  - 自動的なアウトライン管理機能の実装
+  - ユーザー通知の追加
+  - ドキュメントの更新
+
+  良い点
+
+  - 堅牢性の向上: バッファ削除時のクリーンアップ処理が追加されている
+  - ユーザビリティの改善: 自動更新・自動クローズ機能により使い勝手が向上
+  - ドキュメント充実: CLAUDE.mdが詳細に更新され、アーキテクチャが明確化
+
+  改善提案
+
+  1. バッファ削除処理の安全性 (lua/core/window.lua:77-80)
+
+  if buf and vim.api.nvim_buf_is_valid(buf) then
+      vim.api.nvim_buf_delete(buf, { force = true })
+  end
+  問題点: force = trueは予期しない変更の損失を招く可能性があります。
+  推奨: アウトラインバッファは読み取り専用なので問題は少ないですが、明示的にmodifiedチェックを追加するとより安全です。
+
+  2. 重複コードの排除 (lua/core/window.lua:114-123, lua/core/window.lua:180-188)
+
+  アウトラインバッファの存在チェックロジックが2箇所で重複しています:
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.api.nvim_buf_is_valid(buf) then
+          local buf_name = vim.api.nvim_buf_get_name(buf)
+          if buf_name:match('md%-outline$') then
+              -- ...
+          end
+      end
+  end
+  推奨: このロジックをfind_outline_buffer()のようなヘルパー関数に抽出してDRY原則に従うべきです。
+
+  3. エラーハンドリングの改善 (lua/core/window.lua:53-56)
+
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+      return nil
+  end
+  問題点: エラー時に静かに失敗しています。
+  推奨: デバッグを容易にするため、警告やログ出力を追加することを検討してください。
+
+  4. autocmdグループのクリーンアップ (lua/core/window.lua:82-90)
+
+  M.close()で一部のautocmdグループのみクリアしていますが、MdOutlineAutoCloseグループはクリアされません。
+  推奨: すべての関連autocmdグループを確実にクリーンアップするか、グローバルなautocmdは意図的に残すことをコメントで明示してください。
+
+  5. vim.schedule()の使用理由 (plugin/commands.lua:21, lua/core/window.lua:212)
+
+  vim.schedule()が2箇所で使われていますが、なぜ必要なのかコメントがありません。
+  推奨: 遅延実行が必要な理由(例: BufEnterイベント中のウィンドウ操作の競合回避)をコメントで説明してください。
+
+  6. マジックナンバー (lua/core/window.lua:110)
+
+  vim.api.nvim_win_set_width(new_outline_win, 40)
+  推奨: 40を設定可能な定数または設定オプションにすることを検討してください。
+
+  7. パフォーマンス懸念 (lua/core/window.lua:171)
+
+  BufEnterイベントごとに全ウィンドウをループで検索しています。
+  推奨: ウィンドウ/バッファIDをモジュール変数にキャッシュすることで、繰り返し検索を避けられます。
+
+  8. 削除されたコード (lua/md-outline.lua:23-26)
+
+  -- function M.main()
+  --     M.show()
+  --     vim.notify('md-outline\'s buffer is opened')
+  -- end
+  推奨: 未使用のコメントアウトされたコードは削除してください。必要であればgit履歴から復元できます。
+
+  セキュリティ・リスク
+
+  - 特に重大なセキュリティ問題はありません
+  - force = trueによるバッファ削除は、読み取り専用バッファなので許容範囲内です
+
+  テストカバレッジ
+
+  - 新機能(自動更新、重複防止)に対するユニットテストが不足しています
+  - 推奨: tests/ディレクトリに以下のテストケースを追加:
+    - 重複バッファ防止のテスト
+    - バッファ切り替え時の自動更新テスト
+    - 非markdownファイルでの自動クローズテスト
+
+  総評
+
+  全体的に良いPRです。重要な機能改善が含まれており、コードの品質も高いです。ただし、DRY原則の遵守、エラーハンドリングの改善、テストカバレッジの追加により、さらに堅牢にできます。マージ前に上記の重複コード削除を検討することを強く推奨し
+  ます。
+
+  推奨アクション:
+  1. 重複するバッファ検索ロジックをヘルパー関数に抽出(必須)
+  2. 未使用のコメントアウトコードを削除(必須)
+  3. vim.schedule()の使用理由をコメント追加(推奨)
+  4. ユニットテストの追加(推奨)

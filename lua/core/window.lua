@@ -4,6 +4,16 @@ local string = require('core.string')
 
 local ns_id = vim.api.nvim_create_namespace('md_outline')
 
+local OUTLINE_WINDOW_WIDTH = 40
+
+local function is_outline_buffer(buf_name)
+    return buf_name:match('md%-outline$') ~= nil
+end
+
+local function is_markdown_file(file_name)
+    return file_name:match('%.md$') ~= nil
+end
+
 -- Find the index of the heading that contains the cursor position
 -- @param cursor_line number: Current cursor line number
 -- @param positions table: Array of heading positions with line numbers
@@ -107,7 +117,7 @@ local function create_outline_buffer(lines)
     local new_outline_win = vim.api.nvim_get_current_win()
 
     vim.api.nvim_win_set_buf(new_outline_win, new_outline_buf)
-    vim.api.nvim_win_set_width(new_outline_win, 40)
+    vim.api.nvim_win_set_width(new_outline_win, OUTLINE_WINDOW_WIDTH)
 
     return new_outline_win, new_outline_buf
 end
@@ -119,10 +129,9 @@ function M.show()
         local buf = vim.api.nvim_win_get_buf(win)
         if vim.api.nvim_buf_is_valid(buf) then
             local buf_name = vim.api.nvim_buf_get_name(buf)
-            if buf_name:match('md%-outline$') then
-                -- update buffer contents
+            if is_outline_buffer(buf_name) then
                 write_buffer_contents(vim.api.nvim_buf_get_lines(0, 0, -1, false), buf)
-                vim.notify('The outline buffer contents are updated.')
+                vim.notify('Outline updated for current buffer')
                 return win
             end
         end
@@ -152,7 +161,9 @@ function M.show()
         group = 'MdOutlineHighlight',
         buffer = source_buf_local,
         callback = function()
-            update_highlight(new_outline_buf, source_buf_local)
+            if vim.api.nvim_buf_is_valid(new_outline_buf) and vim.api.nvim_buf_is_valid(source_buf_local) then
+                update_highlight(new_outline_buf, source_buf_local)
+            end
         end,
     })
 
@@ -162,7 +173,9 @@ function M.show()
         group = 'MdOutlineContents',
         buffer = source_buf_local,
         callback = function()
-            write_buffer_contents(vim.api.nvim_buf_get_lines(0, 0, -1, false), new_outline_buf)
+            if vim.api.nvim_buf_is_valid(new_outline_buf) then
+                write_buffer_contents(vim.api.nvim_buf_get_lines(0, 0, -1, false), new_outline_buf)
+            end
         end
     })
 
@@ -172,14 +185,12 @@ function M.show()
         group = 'MdOutlineAutoClose',
         callback = function()
             local current_buf_name = vim.api.nvim_buf_get_name(0)
-            local is_outline_buf = current_buf_name:match('md%-outline$')
-            local is_md_file = current_buf_name:match('%.md$')
 
-            if is_outline_buf then
+            if is_outline_buffer(current_buf_name) then
                 return
             end
 
-            if is_md_file then
+            if is_markdown_file(current_buf_name) then
                 -- current buffer is *.md
                 local outline_exists = false
                 local outline_buf = nil
@@ -187,7 +198,7 @@ function M.show()
                     local buf = vim.api.nvim_win_get_buf(win)
                     if vim.api.nvim_buf_is_valid(buf) then
                         local buf_name = vim.api.nvim_buf_get_name(buf)
-                        if buf_name:match('md%-outline$') then
+                        if is_outline_buffer(buf_name) then
                             outline_exists = true
                             outline_buf = buf
                             break
@@ -196,31 +207,32 @@ function M.show()
                 end
 
                 if outline_exists and outline_buf then
-                    -- current buffer is *.md and outline buffer exists
-                    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-                    write_buffer_contents(lines, outline_buf)
 
-                    local heading_positions = {}
-                    for i, line in ipairs(lines) do
-                        if line:match("^#+%s+") then
-                            table.insert(heading_positions, {line = i, text = line})
+                    if vim.api.nvim_buf_is_valid(outline_buf) then
+                        local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+                        write_buffer_contents(lines, outline_buf)
+
+                        local heading_positions = {}
+                        for i, line in ipairs(lines) do
+                            if line:match("^#+%s+") then
+                                table.insert(heading_positions, {line = i, text = line})
+                            end
                         end
+                        vim.b[vim.api.nvim_get_current_buf()].md_outline_positions = heading_positions
                     end
-                    vim.b[vim.api.nvim_get_current_buf()].md_outline_positions = heading_positions
                 else
-                    -- current buffer is *.md and there is no outline buffer
                     vim.schedule(function()
                         M.show()
                     end)
                 end
             else
-                -- close an outline buffer if not *.md file
                 for _, win in ipairs(vim.api.nvim_list_wins()) do
                     local buf = vim.api.nvim_win_get_buf(win)
                     if vim.api.nvim_buf_is_valid(buf) then
                         local buf_name = vim.api.nvim_buf_get_name(buf)
-                        if buf_name:match('md%-outline$') then
-                            M.close()
+                        if is_outline_buffer(buf_name) then
+                            M.close(win)
+                            vim.notify('Outline closed')
                             return
                         end
                     end
