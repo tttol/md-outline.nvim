@@ -65,7 +65,7 @@ local function write_buffer_contents(lines, buf)
         return nil
     end
 
-     -- enable to modify buffer temporary
+    -- enable to modify buffer temporary
     vim.api.nvim_set_option_value('modifiable', true, {buf = buf})
 
     local headings = string.extractHeadings(lines)
@@ -105,6 +105,16 @@ end
 -- @param lines table: Array of lines from the source markdown file
 -- @return number, number: Returns outline_win and outline_buf
 local function create_outline_buffer(lines)
+    -- delete previous outline buffer
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_valid(buf) then
+            local buf_name = vim.api.nvim_buf_get_name(buf)
+            if is_outline_buffer(buf_name) then
+                vim.api.nvim_buf_delete(buf, { force = true })
+            end
+        end
+    end
+
     local new_outline_buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_name(new_outline_buf, 'md-outline')
     new_outline_buf = write_buffer_contents(lines, new_outline_buf)
@@ -209,6 +219,7 @@ function M.show()
                 if outline_exists and outline_buf then
 
                     if vim.api.nvim_buf_is_valid(outline_buf) then
+                        local current_buf = vim.api.nvim_get_current_buf()
                         local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
                         write_buffer_contents(lines, outline_buf)
 
@@ -218,7 +229,31 @@ function M.show()
                                 table.insert(heading_positions, {line = i, text = line})
                             end
                         end
-                        vim.b[vim.api.nvim_get_current_buf()].md_outline_positions = heading_positions
+                        vim.b[current_buf].md_outline_positions = heading_positions
+
+                        vim.api.nvim_create_augroup('MdOutlineHighlight', {clear = true})
+                        vim.api.nvim_create_autocmd({'CursorMoved', 'CursorMovedI'}, {
+                            group = 'MdOutlineHighlight',
+                            buffer = current_buf,
+                            callback = function()
+                        if vim.api.nvim_buf_is_valid(outline_buf) and vim.api.nvim_buf_is_valid(current_buf) then
+                                    update_highlight(outline_buf, current_buf)
+                                end
+                            end,
+                        })
+
+                        vim.api.nvim_create_augroup('MdOutlineContents', {clear = true})
+                        vim.api.nvim_create_autocmd({'TextChanged', 'TextChangedI'}, {
+                            group = 'MdOutlineContents',
+                            buffer = current_buf,
+                            callback = function()
+                                if vim.api.nvim_buf_is_valid(outline_buf) then
+                                    write_buffer_contents(vim.api.nvim_buf_get_lines(0, 0, -1, false), outline_buf)
+                                end
+                            end
+                        })
+
+                        update_highlight(outline_buf, current_buf)
                     end
                 else
                     vim.schedule(function()
