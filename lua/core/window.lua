@@ -6,10 +6,16 @@ local ns_id = vim.api.nvim_create_namespace('md_outline')
 
 local OUTLINE_WINDOW_WIDTH = 40
 
+-- Check if the buffer name matches the outline buffer pattern
+-- @param buf_name string: Buffer name to check
+-- @return boolean: True if buffer is an outline buffer, false otherwise
 local function is_outline_buffer(buf_name)
     return buf_name:match('md%-outline$') ~= nil
 end
 
+-- Check if the file name is a markdown file
+-- @param file_name string: File name to check
+-- @return boolean: True if file is a markdown file (*.md), false otherwise
 local function is_markdown_file(file_name)
     return file_name:match('%.md$') ~= nil
 end
@@ -60,6 +66,10 @@ local function update_highlight(outline_buf_local, source_buf_local)
     end
 end
 
+-- Update outline buffer contents with formatted headings from markdown lines
+-- @param lines table: Array of lines from the markdown file
+-- @param buf number: Buffer number of the outline window
+-- @return number|nil: Buffer number on success, nil if buffer is invalid
 local function write_buffer_contents(lines, buf)
     if not buf or not vim.api.nvim_buf_is_valid(buf) then
         return nil
@@ -75,6 +85,7 @@ local function write_buffer_contents(lines, buf)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, outlines)
     vim.highlight.range(buf, ns_id, 'Comment', {#outlines - 1, 0}, {#outlines - 1, -1})
 
+    -- disable to modify buffer
     vim.api.nvim_set_option_value('modifiable', false, {buf = buf})
     return buf
 end
@@ -165,7 +176,7 @@ function M.show()
         vim.api.nvim_set_current_win(current_win)
     end
 
-    -- autocmd for highlight
+    -- autocmd for highlight on cursor meved
     vim.api.nvim_create_augroup('MdOutlineHighlight', {clear = true})
     vim.api.nvim_create_autocmd({'CursorMoved', 'CursorMovedI'}, {
         group = 'MdOutlineHighlight',
@@ -177,7 +188,7 @@ function M.show()
         end,
     })
 
-    -- autocmd for updating a buffer
+    -- autocmd for updating a buffer on text changed
     vim.api.nvim_create_augroup('MdOutlineContents', {clear = true})
     vim.api.nvim_create_autocmd({'TextChanged', 'TextChangedI'}, {
         group = 'MdOutlineContents',
