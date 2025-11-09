@@ -20,8 +20,4 @@ function M.setup(opts)
   M.config = vim.tbl_extend('force', M.config, opts or {})
 end
 
-function M.main()
-    M.show()
-end
-
 return M
