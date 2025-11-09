@@ -43,6 +43,26 @@ The plugin follows standard Lua module pattern:
 - Write pure functions where possible (accept parameters instead of reading global state)
 - Follow AAA pattern for tests: Arrange, Act, Assert
 
+### Documentation Comments
+All functions should have documentation comments in the following format:
+```lua
+-- Brief description of what the function does
+-- @param param_name type: Description of the parameter
+-- @return type: Description of the return value
+local function function_name(param_name)
+  -- implementation
+end
+```
+Example:
+```lua
+-- Check if the buffer name matches the outline buffer pattern
+-- @param buf_name string: Buffer name to check
+-- @return boolean: True if buffer is an outline buffer, false otherwise
+local function is_outline_buffer(buf_name)
+  return buf_name:match('md%-outline$') ~= nil
+end
+```
+
 ## Features
 ### Automatic Outline Management
 - **Auto-open on markdown files**: When `auto_open` is enabled (default), the outline automatically opens when entering a markdown file

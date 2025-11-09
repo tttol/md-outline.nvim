@@ -1,5 +1,8 @@
 local M = {}
 
+-- Extract markdown headings from lines
+-- @param lines table: Array of lines from the markdown file
+-- @return table: Array of heading lines that match the pattern "^#+%s+"
 function M.extractHeadings(lines)
     local headings = {}
 
@@ -12,6 +15,9 @@ function M.extractHeadings(lines)
     return headings
 end
 
+-- Create indented outline from markdown headings
+-- @param headings table: Array of heading lines starting with "#"
+-- @return table: Array of formatted outline lines with proper indentation based on heading level
 function M.createOutline(headings)
     local outlines = {}
     for _, h in ipairs(headings) do
