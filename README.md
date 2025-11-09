@@ -1,9 +1,11 @@
 # md-outline.nvim
 
 A Neovim plugin that displays a live outline of your markdown files in a split window.
-[image](.static/mdoutline-example.png)
+<br/>
+![image](static/md-outline-example.png)
 ## Features
-[demo](.static/demo.mov)
+<video src=".static/demo.mov" controls="true"></video>
+
 - **Automatic outline management**: Opens automatically when entering markdown files, closes when leaving
 - **Real-time updates**: Outline content updates as you edit the file
 - **Current heading highlight**: Highlights the heading corresponding to your cursor position
