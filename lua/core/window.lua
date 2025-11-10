@@ -20,6 +20,19 @@ local function is_markdown_file(file_name)
     return file_name:match('%.md$') ~= nil
 end
 
+-- Extract heading positions from lines
+-- @param lines table: Array of lines from the markdown file
+-- @return table: Array of heading positions with line numbers and text
+local function extract_heading_positions(lines)
+    local heading_positions = {}
+    for i, line in ipairs(lines) do
+        if line:match("^#+%s+") then
+            table.insert(heading_positions, {line = i, text = line})
+        end
+    end
+    return heading_positions
+end
+
 -- Find the index of the heading that contains the cursor position
 -- @param cursor_line number: Current cursor line number
 -- @param positions table: Array of heading positions with line numbers
@@ -162,13 +175,7 @@ function M.show()
     local source_buf_local = vim.api.nvim_get_current_buf()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
-    local heading_positions = {}
-    for i, line in ipairs(lines) do
-        if line:match("^#+%s+") then
-            table.insert(heading_positions, {line = i, text = line})
-        end
-    end
-
+    local heading_positions = extract_heading_positions(lines)
     vim.b[source_buf_local].md_outline_positions = heading_positions
     local new_outline_win, new_outline_buf = create_outline_buffer(lines)
 
@@ -195,7 +202,9 @@ function M.show()
         buffer = source_buf_local,
         callback = function()
             if vim.api.nvim_buf_is_valid(new_outline_buf) then
-                write_buffer_contents(vim.api.nvim_buf_get_lines(0, 0, -1, false), new_outline_buf)
+                local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+                write_buffer_contents(lines, new_outline_buf)
+                vim.b[source_buf_local].md_outline_positions = extract_heading_positions(lines)
             end
         end
     })
@@ -234,12 +243,7 @@ function M.show()
                         local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
                         write_buffer_contents(lines, outline_buf)
 
-                        local heading_positions = {}
-                        for i, line in ipairs(lines) do
-                            if line:match("^#+%s+") then
-                                table.insert(heading_positions, {line = i, text = line})
-                            end
-                        end
+                        local heading_positions = extract_heading_positions(lines)
                         vim.b[current_buf].md_outline_positions = heading_positions
 
                         vim.api.nvim_create_augroup('MdOutlineHighlight', {clear = true})
@@ -259,7 +263,9 @@ function M.show()
                             buffer = current_buf,
                             callback = function()
                                 if vim.api.nvim_buf_is_valid(outline_buf) then
-                                    write_buffer_contents(vim.api.nvim_buf_get_lines(0, 0, -1, false), outline_buf)
+                                    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+                                    write_buffer_contents(lines, outline_buf)
+                                    vim.b[current_buf].md_outline_positions = extract_heading_positions(lines)
                                 end
                             end
                         })
