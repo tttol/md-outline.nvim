@@ -2,9 +2,7 @@
 
 A Neovim plugin that displays a live outline of your markdown files in a split window.
 <br/>
-![image](static/md-outline-example.png)
-
-<video src="https://media.githubusercontent.com/media/tttol/md-outline.nvim/main/static/demo.mp4" controls muted autoplay loop></video>
+![demo gif](static/demo.gif)
 
 ## Features
 
