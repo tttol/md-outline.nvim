@@ -2,7 +2,7 @@
 
 A Neovim plugin that displays a live outline of your markdown files in a split window.
 <br/>
-![demo gif](static/demo.gif)
+![demo gif](static/demo2.gif)
 
 ## Features
 
