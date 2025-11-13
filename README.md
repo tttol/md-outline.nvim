@@ -24,11 +24,9 @@ To configure options
 ```lua:.~/.config/nvim/plugins/md-outline.lua
 return {
   'tttol/md-outline.nvim',
-  config = function()
-    require('md-outline').setup({
-      auto_open = false -- default: true
-    })
-  end
+  opts = {
+    auto_open = false -- default: true
+  }
 }
 
 ```
